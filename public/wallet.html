@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet Dashboard - Insecure Wallet</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Wallet Dashboard</h1>
+            <div class="user-info">
+                <span id="userInfo">Loading...</span>
+                <button onclick="logout()" class="btn btn-secondary">Logout</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Wallet Balance Card -->
+            <div class="card balance-card">
+                <h2>Current Balance</h2>
+                <div class="balance-display">
+                    <span class="currency">$</span>
+                    <span id="balance">0.00</span>
+                </div>
+                <p class="account-info">Account ID: <span id="accountId">-</span></p>
+            </div>
+
+            <!-- Transaction Forms -->
+            <div class="transaction-section">
+                <div class="card">
+                    <h3>💳 Deposit Money</h3>
+                    <form id="depositForm">
+                        <div class="form-group">
+                            <label for="depositAmount">Amount ($):</label>
+                            <input type="number" id="depositAmount" step="0.01" min="0.01" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">Deposit</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>💸 Withdraw Money</h3>
+                    <form id="withdrawForm">
+                        <div class="form-group">
+                            <label for="withdrawAmount">Amount ($):</label>
+                            <input type="number" id="withdrawAmount" step="0.01" min="0.01" required>
+                        </div>
+                        <button type="submit" class="btn btn-danger">Withdraw</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Vulnerability Demo Section -->
+            <div class="card vulnerability-demo">
+                <h3>🔍 Security Testing Area</h3>
+                <p><strong>Try these attacks:</strong></p>
+                
+                <div class="attack-demos">
+                    <div class="attack-demo">
+                        <h4>IDOR Attack:</h4>
+                        <p>Change the userId in the URL to access other accounts:</p>
+                        <div class="url-demo">
+                            <input type="text" id="idorUrl" value="wallet.html?userId=1" readonly>
+                            <button onclick="testIDOR()" class="btn btn-warning">Test IDOR</button>
+                        </div>
+                    </div>
+
+                    <div class="attack-demo">
+                        <h4>View All Users:</h4>
+                        <p>Any authenticated user can see all user accounts:</p>
+                        <button onclick="viewAllUsers()" class="btn btn-warning">View All Users</button>
+                        <div id="allUsers" class="users-list"></div>
+                    </div>
+
+                    <div class="attack-demo">
+                        <h4>Cross-Account Transaction:</h4>
+                        <p>Try to deposit/withdraw from another user's account:</p>
+                        <input type="number" id="targetUserId" placeholder="Target User ID" min="1">
+                        <input type="number" id="attackAmount" placeholder="Amount" step="0.01">
+                        <button onclick="crossAccountWithdraw()" class="btn btn-danger">Attack Withdraw</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="messages" class="messages"></div>
+        </main>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentUserId = null;
+
+        // Get userId from URL parameters (VULNERABILITY: Relying on client-side parameters)
+        const urlParams = new URLSearchParams(window.location.search);
+        currentUserId = urlParams.get('userId');
+
+        // Load user data on page load
+        window.addEventListener('load', async () => {
+            const token = localStorage.getItem('token');
+            const storedUser = localStorage.getItem('user');
+            
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            if (storedUser) {
+                currentUser = JSON.parse(storedUser);
+                document.getElementById('userInfo').textContent = `Welcome, ${currentUser.username} (${currentUser.role})`;
+            }
+            
+            if (currentUserId) {
+                await loadWalletData(currentUserId);
+                document.getElementById('accountId').textContent = currentUserId;
+                document.getElementById('idorUrl').value = `wallet.html?userId=${currentUserId}`;
+            }
+        });
+
+        // Load wallet data (VULNERABLE: IDOR)
+        async function loadWalletData(userId) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`/api/wallet/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('balance').textContent = data.balance.toFixed(2);
+                    showMessage(`Loaded wallet for ${data.username} (ID: ${data.id})`, 'info');
+                } else {
+                    showMessage('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Network error loading wallet data', 'error');
+            }
+        }
+
+        // Deposit form handler
+        document.getElementById('depositForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('depositAmount').value;
+            await performTransaction('deposit', amount, currentUserId);
+        });
+
+        // Withdraw form handler
+        document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = document.getElementById('withdrawAmount').value;
+            await performTransaction('withdraw', amount, currentUserId);
+        });
+
+        // Perform transaction (VULNERABLE: CSRF, IDOR)
+        async function performTransaction(type, amount, userId) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`/api/wallet/${userId}/${type}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ amount: parseFloat(amount) })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('balance').textContent = data.newBalance.toFixed(2);
+                    showMessage(`${type.charAt(0).toUpperCase() + type.slice(1)} successful! New balance: $${data.newBalance.toFixed(2)}`, 'success');
+                    
+                    // Clear form
+                    document.getElementById(type + 'Amount').value = '';
+                } else {
+                    showMessage('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Network error during transaction', 'error');
+            }
+        }
+
+        // IDOR Test
+        function testIDOR() {
+            const newUserId = prompt('Enter user ID to access (try 1, 2, or 3):');
+            if (newUserId) {
+                window.location.href = `wallet.html?userId=${newUserId}`;
+            }
+        }
+
+        // View all users (VULNERABLE: No authorization)
+        async function viewAllUsers() {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch('/api/users', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const users = await response.json();
+                
+                if (response.ok) {
+                    const usersDiv = document.getElementById('allUsers');
+                    usersDiv.innerHTML = '<h4>All Users:</h4>' + 
+                        users.map(user => 
+                            `<div class="user-item">
+                                ID: ${user.id}, Username: ${user.username}, 
+                                Balance: $${user.balance}, Role: ${user.role}
+                                <button onclick="loadWalletData(${user.id}); currentUserId=${user.id};" class="btn btn-sm">Access Wallet</button>
+                            </div>`
+                        ).join('');
+                } else {
+                    showMessage('Error loading users: ' + users.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Network error loading users', 'error');
+            }
+        }
+
+        // Cross-account attack
+        async function crossAccountWithdraw() {
+            const targetId = document.getElementById('targetUserId').value;
+            const amount = document.getElementById('attackAmount').value;
+            
+            if (!targetId || !amount) {
+                showMessage('Please enter target user ID and amount', 'error');
+                return;
+            }
+            
+            await performTransaction('withdraw', amount, targetId);
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // Show messages
+        function showMessage(message, type) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+            messagesDiv.appendChild(messageDiv);
+            
+            // Remove message after 5 seconds
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

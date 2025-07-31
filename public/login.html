@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Insecure Wallet</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Insecure Wallet Login</h1>
+            <a href="index.html" class="back-link">← Back to Home</a>
+        </header>
+
+        <main>
+            <div class="card login-card">
+                <h2>Login to Your Wallet</h2>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+
+                <div id="loginError" class="error-message" style="display: none;"></div>
+                <div id="loginSuccess" class="success-message" style="display: none;"></div>
+
+                <div class="quick-login">
+                    <h3>Quick Login (for testing):</h3>
+                    <div class="quick-login-buttons">
+                        <button onclick="quickLogin('alice', 'password123')" class="btn btn-secondary">Login as Alice</button>
+                        <button onclick="quickLogin('bob', 'password123')" class="btn btn-secondary">Login as Bob</button>
+                        <button onclick="quickLogin('admin', 'admin123')" class="btn btn-secondary">Login as Admin</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Quick login function for testing
+        function quickLogin(username, password) {
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = password;
+            document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+        }
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            const errorDiv = document.getElementById('loginError');
+            const successDiv = document.getElementById('loginSuccess');
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store token in localStorage (VULNERABILITY: Client-side token storage)
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    successDiv.textContent = 'Login successful! Redirecting...';
+                    successDiv.style.display = 'block';
+                    errorDiv.style.display = 'none';
+                    
+                    // Redirect to wallet
+                    setTimeout(() => {
+                        window.location.href = `wallet.html?userId=${data.user.id}`;
+                    }, 1000);
+                } else {
+                    errorDiv.textContent = data.error || 'Login failed';
+                    errorDiv.style.display = 'block';
+                    successDiv.style.display = 'none';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error. Please try again.';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+            };
+        });
+    </script>
+</body>
+</html>

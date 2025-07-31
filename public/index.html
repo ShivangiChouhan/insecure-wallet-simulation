@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insecure Wallet - Security Demo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔓 Insecure Wallet Demo</h1>
+            <p class="warning">⚠️ This application contains intentional security vulnerabilities for educational purposes</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Welcome to the Insecure Wallet</h2>
+                <p>This is a demonstration of common web application security vulnerabilities:</p>
+                
+                <ul class="vulnerability-list">
+                    <li>🔸 <strong>CSRF</strong> - Cross-Site Request Forgery</li>
+                    <li>🔸 <strong>IDOR</strong> - Insecure Direct Object Reference</li>
+                    <li>🔸 <strong>Token Reuse</strong> - Poor JWT Management</li>
+                    <li>🔸 <strong>Broken Authentication</strong> - Weak token validation</li>
+                    <li>🔸 <strong>Missing Authorization</strong> - No proper access controls</li>
+                </ul>
+
+                <div class="action-buttons">
+                    <a href="login.html" class="btn btn-primary">Login to Wallet</a>
+                </div>
+
+                <div class="test-accounts">
+                    <h3>Test Accounts:</h3>
+                    <div class="account-grid">
+                        <div class="account-card">
+                            <strong>Regular User</strong><br>
+                            Username: alice<br>
+                            Password: password123<br>
+                            Balance: $1,000
+                        </div>
+                        <div class="account-card">
+                            <strong>Regular User</strong><br>
+                            Username: bob<br>
+                            Password: password123<br>
+                            Balance: $500
+                        </div>
+                        <div class="account-card">
+                            <strong>Admin User</strong><br>
+                            Username: admin<br>
+                            Password: admin123<br>
+                            Balance: $10,000
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Built for educational purposes - Web Application Security Simulation</p>
+        </footer>
+    </div>
+</body>
+</html>
