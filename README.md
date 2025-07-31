@@ -74,32 +74,28 @@ State-changing operations such as deposit and withdraw do not implement CSRF tok
    ```bash
    git clone https://github.com/ShivangiChouhan/insecure-wallet-simulation.git
    cd insecure-wallet-simulation
-Install dependencies:
-npm install
-
-Start the server:
-node server.js
-
-Access the application at:
-http://localhost:3000/index.html
-
+2. Install dependencies:
+   ```bash
+   npm install
+3. Start the server:
+   ```bash
+   node server.js
+4. Access the application at:
+   ```bash
+   http://localhost:3000/index.html
+                  
 Testing Accounts
 The following accounts are pre-configured for demonstration purposes:
 
 Username	Password	Role	Balance
-alice	password123	user	1000
-bob	password123	user	500
-admin	admin123	admin	10000
+alice	password123	  user	1000
+bob	password123   	user	500
+admin	admin123	   admin	10000
 
 Security Tools Used
-Burp Suite: For manual interception, CSRF PoC generation, and replay attacks
-
-Postman: For API testing and token manipulation
-
-Manual Testing: JWT tampering, IDOR enumeration, role escalation
+- Burp Suite: For manual interception, CSRF PoC generation, and replay attacks
+- Postman: For API testing and token manipulation
+- Manual Testing: JWT tampering, IDOR enumeration, role escalation
 
 Educational Use Only
 This application intentionally lacks key security mechanisms and must never be deployed in a live or production environment. It is intended solely for research, training, and awareness purposes.
-
-License
-This project is provided without warranty under an open educational license. You are free to fork and modify it for personal or instructional use.
